@@ -16,8 +16,13 @@ def get_cascade_paths():
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cascade_dir = os.path.join(base_dir, 'cv2', 'data')
         print(f"Current directory: {os.getcwd()}")
-        print(f"Directory contents: {os.listdir(base_dir)}")
-        print(f"Python path: {sys.path}")
+        print(f"Base directory: {base_dir}")
+        try:
+            print(f"Directory contents: {os.listdir(base_dir)}")
+            print(f"CV2 directory contents: {os.listdir(os.path.join(base_dir, 'cv2'))}")
+            print(f"Data directory contents: {os.listdir(os.path.join(base_dir, 'cv2', 'data'))}")
+        except Exception as e:
+            print(f"Error listing directory contents: {str(e)}")
     else:
         # ローカル環境の場合
         cascade_dir = cv2.data.haarcascades
@@ -32,8 +37,19 @@ def get_cascade_paths():
     # ファイルの存在確認
     if not os.path.exists(cascade_path):
         print(f"Error: Face cascade file not found at {cascade_path}")
+        # 代替パスを試す
+        alt_cascade_path = os.path.join(os.getcwd(), 'cv2', 'data', 'haarcascade_frontalface_default.xml')
+        if os.path.exists(alt_cascade_path):
+            print(f"Found face cascade at alternate path: {alt_cascade_path}")
+            cascade_path = alt_cascade_path
+
     if not os.path.exists(eye_cascade_path):
         print(f"Error: Eye cascade file not found at {eye_cascade_path}")
+        # 代替パスを試す
+        alt_eye_cascade_path = os.path.join(os.getcwd(), 'cv2', 'data', 'haarcascade_eye.xml')
+        if os.path.exists(alt_eye_cascade_path):
+            print(f"Found eye cascade at alternate path: {alt_eye_cascade_path}")
+            eye_cascade_path = alt_eye_cascade_path
     
     return cascade_path, eye_cascade_path
 
