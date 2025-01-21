@@ -206,18 +206,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     Math.pow(rightEye.y - leftEye.y, 2)
                 ) * scale;
 
-                // サングラスのサイズと位置を計算
+                // サングラスのサイズを計算
                 const sunglassesSize = eyeDistance * 1.5;
+
+                // 目の中心位置を計算
                 const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
                 const eyeY = ((leftEye.y + rightEye.y) / 2);
 
-                // 顔の矩形領域内での位置を計算
-                const faceTop = face.y * scale;
-                const faceHeight = face.height * scale;
-                const relativeEyeY = ((eyeY - face.y) / face.height) * faceHeight;
-                const y = faceTop + relativeEyeY - (sunglassesSize / 4);
+                // 顔の矩形領域内での相対位置を計算
+                const eyeOffsetFromTop = eyeY - face.y;
+                const y = (face.y + eyeOffsetFromTop) * scale - (sunglassesSize / 3);
 
-                // サングラスの位置を調整
+                // X座標の位置を調整
                 const x = centerX - (sunglassesSize / 2);
 
                 // サングラスemojiを描画
@@ -255,10 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const sunglassesSize = eyeDistance * 1.5;
                         const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
                         const eyeY = ((leftEye.y + rightEye.y) / 2);
-                        const faceTop = face.y * scale;
-                        const faceHeight = face.height * scale;
-                        const relativeEyeY = ((eyeY - face.y) / face.height) * faceHeight;
-                        const y = faceTop + relativeEyeY - (sunglassesSize / 4);
+                        const eyeOffsetFromTop = eyeY - face.y;
+                        const y = (face.y + eyeOffsetFromTop) * scale - (sunglassesSize / 3);
                         const x = centerX - (sunglassesSize / 2);
 
                         ctx.save();
