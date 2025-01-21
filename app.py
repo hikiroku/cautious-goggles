@@ -1,6 +1,5 @@
 import os
 import cv2
-import mediapipe as mp
 import numpy as np
 from flask import Flask, request, render_template, jsonify
 from werkzeug.utils import secure_filename
@@ -10,14 +9,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB制限
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
-# MediaPipeの顔検出モジュールを初期化
-mp_face_mesh = mp.solutions.face_mesh
-face_mesh = mp_face_mesh.FaceMesh(
-    static_image_mode=True,
-    max_num_faces=10,
-    refine_landmarks=True,
-    min_detection_confidence=0.5
-)
+# OpenCVの顔検出器を初期化
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -29,41 +23,40 @@ def detect_faces(image_path):
     if img is None:
         return {"error": "画像の読み込みに失敗しました"}
 
-    # BGR to RGB
-    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    height, width = rgb_img.shape[:2]
+    # グレースケールに変換
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     # 顔を検出
-    results = face_mesh.process(rgb_img)
+    faces = face_cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(30, 30)
+    )
     
     faces_data = []
-    if results.multi_face_landmarks:
-        for face_landmarks in results.multi_face_landmarks:
-            # 顔の境界ボックスを計算
-            x_coordinates = [landmark.x for landmark in face_landmarks.landmark]
-            y_coordinates = [landmark.y for landmark in face_landmarks.landmark]
-            
-            x_min = int(min(x_coordinates) * width)
-            y_min = int(min(y_coordinates) * height)
-            x_max = int(max(x_coordinates) * width)
-            y_max = int(max(y_coordinates) * height)
-            
-            face_data = {
-                "x": x_min,
-                "y": y_min,
-                "width": x_max - x_min,
-                "height": y_max - y_min,
-                "landmarks": []
-            }
-            
-            # ランドマークの座標を取得
-            for idx, landmark in enumerate(face_landmarks.landmark):
-                face_data["landmarks"].append({
-                    "x": int(landmark.x * width),
-                    "y": int(landmark.y * height)
-                })
-            
-            faces_data.append(face_data)
+    for (x, y, w, h) in faces:
+        face_data = {
+            "x": int(x),
+            "y": int(y),
+            "width": int(w),
+            "height": int(h),
+            "landmarks": []
+        }
+        
+        # 顔領域内で目を検出
+        roi_gray = gray[y:y+h, x:x+w]
+        eyes = eye_cascade.detectMultiScale(roi_gray)
+        
+        # 目の位置を追加
+        for (ex, ey, ew, eh) in eyes:
+            face_data["landmarks"].append({
+                "x": int(x + ex + ew/2),  # 目の中心のx座標
+                "y": int(y + ey + eh/2),  # 目の中心のy座標
+                "type": "eye"
+            })
+        
+        faces_data.append(face_data)
     
     return faces_data
 
