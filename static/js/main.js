@@ -79,23 +79,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 検出結果の詳細を表示
-        const detailsHTML = faces.map((face, index) => `
-            <div class="face-info">
-                <h4>顔 ${index + 1}</h4>
-                <p>位置: (${face.x}, ${face.y})</p>
-                <p>サイズ: ${face.width} x ${face.height}</p>
-                <p>ランドマーク数: ${face.landmarks.length}</p>
-                <div class="expression-info">
-                    <h5>表情分析</h5>
-                    <p>表情: ${face.expression.expression}</p>
-                    <p>信頼度: ${face.expression.confidence}</p>
-                    <div class="expression-details">
-                        <p>笑顔: ${face.expression.details['笑顔の検出']}</p>
-                        <p>目の検出: ${face.expression.details['目の検出']}</p>
+        const detailsHTML = faces.map((face, index) => {
+            // 目のペアを検出
+            const eyes = face.landmarks.filter(point => point.type === 'eye');
+            const eyePair = findHorizontalEyePair(eyes);
+            
+            // 顔の位置情報を計算
+            const faceTop = face.y * scale;
+            const faceHeight = face.height * scale;
+            
+            // 目のペア情報を整形
+            let eyePairInfo = '<p>目のペアが検出できませんでした</p>';
+            if (eyePair) {
+                const leftEyeScaled = {
+                    x: eyePair.leftEye.x * scale,
+                    y: eyePair.leftEye.y * scale
+                };
+                const rightEyeScaled = {
+                    x: eyePair.rightEye.x * scale,
+                    y: eyePair.rightEye.y * scale
+                };
+                eyePairInfo = `
+                    <div class="eye-pair-info">
+                        <h5>目のペア情報</h5>
+                        <p>左目: (${leftEyeScaled.x.toFixed(2)}, ${leftEyeScaled.y.toFixed(2)})</p>
+                        <p>右目: (${rightEyeScaled.x.toFixed(2)}, ${rightEyeScaled.y.toFixed(2)})</p>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="face-info">
+                    <h4>顔 ${index + 1}</h4>
+                    <p>位置: (${face.x}, ${face.y})</p>
+                    <p>サイズ: ${face.width} x ${face.height}</p>
+                    <p>ランドマーク数: ${face.landmarks.length}</p>
+                    
+                    <div class="position-info">
+                        <h5>位置計算情報</h5>
+                        <p>FaceTop: ${faceTop.toFixed(2)}</p>
+                        <p>FaceHeight: ${faceHeight.toFixed(2)}</p>
+                    </div>
+                    
+                    ${eyePairInfo}
+                    
+                    <div class="expression-info">
+                        <h5>表情分析</h5>
+                        <p>表情: ${face.expression.expression}</p>
+                        <p>信頼度: ${face.expression.confidence}</p>
+                        <div class="expression-details">
+                            <p>笑顔: ${face.expression.details['笑顔の検出']}</p>
+                            <p>目の検出: ${face.expression.details['目の検出']}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         faceDetails.innerHTML = detailsHTML;
         resultInfo.classList.remove('hidden');
