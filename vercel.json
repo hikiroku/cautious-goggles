@@ -23,6 +23,8 @@
   ],
   "env": {
     "PYTHONPATH": "/var/task",
-    "PYTHONUNBUFFERED": "1"
+    "PYTHONUNBUFFERED": "1",
+    "VERCEL": "1",
+    "DEBUG": "1"
   }
 }
