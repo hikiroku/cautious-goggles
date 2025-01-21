@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const centerX = (leftEye[0] + rightEye[0]) / 2;
         const centerY = (leftEye[1] + rightEye[1]) / 2;
         const x = centerX - (sunglassesWidth / 2);
-        const y = centerY - (sunglassesHeight / 2);
+        const y = centerY - (sunglassesHeight / 2) + (sunglassesHeight / 2); // 下方向にオフセット
 
         // サングラスemojiを描画
         ctx.save();
