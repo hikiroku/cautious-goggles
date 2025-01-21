@@ -106,12 +106,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
                 );
 
-                // サングラスのサイズと位置を計算
-                const sunglassesSize = eyeDistance * 2.0;
+                // サングラスのサイズを計算
+                const sunglassesWidth = eyeDistance * 2.0; // 横幅は目の間隔の2倍
+                const sunglassesHeight = sunglassesWidth / 3; // 縦幅は横幅の1/3
+
+                // 目の中心位置を計算
                 const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
                 const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
-                const x = centerX - (sunglassesSize / 2);
-                const y = centerY - (sunglassesSize * 0.6);
+
+                // サングラスの位置を調整（目を完全に覆うように）
+                const x = centerX - (sunglassesWidth / 2);
+                const y = centerY - (sunglassesHeight / 2); // 目の中心から上下均等に配置
 
                 eyePairInfo = `
                     <div class="eye-pair-info">
@@ -132,7 +137,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>同じY座標差の場合、X座標の距離が近いペアを選択</p>
                         <h5>計算情報</h5>
                         <p>目の間の距離: ${eyeDistance.toFixed(2)}px</p>
-                        <p>サングラスサイズ: ${sunglassesSize.toFixed(2)}px</p>
+                        <p>サングラスサイズ:</p>
+                        <p>　横幅: ${sunglassesWidth.toFixed(2)}px</p>
+                        <p>　縦幅: ${sunglassesHeight.toFixed(2)}px</p>
                         <p>中心座標: (${centerX.toFixed(2)}, ${centerY.toFixed(2)})</p>
                         <p>表示位置: (${x.toFixed(2)}, ${y.toFixed(2)})</p>
                     </div>
@@ -310,20 +317,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
                 );
 
-                // サングラスのサイズを計算（目の間隔の2.0倍）
-                const sunglassesSize = eyeDistance * 2.0;
+                // サングラスのサイズを計算
+                const sunglassesWidth = eyeDistance * 2.0; // 横幅は目の間隔の2倍
+                const sunglassesHeight = sunglassesWidth / 3; // 縦幅は横幅の1/3
 
                 // 目の中心位置を計算
                 const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
                 const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
 
                 // サングラスの位置を調整（目を完全に覆うように）
-                const x = centerX - (sunglassesSize / 2);
-                const y = centerY - (sunglassesSize * 0.6); // 目の中心から上に60%移動
+                const x = centerX - (sunglassesWidth / 2);
+                const y = centerY - (sunglassesHeight / 2); // 目の中心から上下均等に配置
 
                 // サングラスemojiを描画
                 ctx.save();
-                ctx.font = `${sunglassesSize}px Arial`;
+                ctx.font = `${sunglassesWidth}px Arial`;
                 ctx.fillText('🕶', x, y);
                 ctx.restore();
             }
@@ -362,14 +370,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
                         );
 
-                        const sunglassesSize = eyeDistance * 2.0;
+                        const sunglassesWidth = eyeDistance * 2.0;
+                        const sunglassesHeight = sunglassesWidth / 3;
                         const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
                         const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
-                        const x = centerX - (sunglassesSize / 2);
-                        const y = centerY - (sunglassesSize * 0.6);
+                        const x = centerX - (sunglassesWidth / 2);
+                        const y = centerY - (sunglassesHeight / 2);
 
                         ctx.save();
-                        ctx.font = `${sunglassesSize}px Arial`;
+                        ctx.font = `${sunglassesWidth}px Arial`;
                         ctx.fillText('🕶', x, y);
                         ctx.restore();
                     }
