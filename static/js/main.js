@@ -99,11 +99,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     x: eyePair.rightEye.x * scale,
                     y: eyePair.rightEye.y * scale
                 };
+
+                // 目の間の距離を計算
+                const eyeDistance = Math.sqrt(
+                    Math.pow(rightEyeScaled.x - leftEyeScaled.x, 2) + 
+                    Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
+                );
+
+                // サングラスのサイズと位置を計算
+                const sunglassesSize = eyeDistance * 2.0;
+                const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
+                const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
+                const x = centerX - (sunglassesSize / 2);
+                const y = centerY - (sunglassesSize * 0.6);
+
                 eyePairInfo = `
                     <div class="eye-pair-info">
                         <h5>目のペア情報</h5>
                         <p>左目: (${leftEyeScaled.x.toFixed(2)}, ${leftEyeScaled.y.toFixed(2)})</p>
                         <p>右目: (${rightEyeScaled.x.toFixed(2)}, ${rightEyeScaled.y.toFixed(2)})</p>
+                        <h5>計算情報</h5>
+                        <p>目の間の距離: ${eyeDistance.toFixed(2)}px</p>
+                        <p>サングラスサイズ: ${sunglassesSize.toFixed(2)}px</p>
+                        <p>中心座標: (${centerX.toFixed(2)}, ${centerY.toFixed(2)})</p>
+                        <p>表示位置: (${x.toFixed(2)}, ${y.toFixed(2)})</p>
                     </div>
                 `;
             }
@@ -117,8 +136,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <div class="position-info">
                         <h5>位置計算情報</h5>
-                        <p>FaceTop: ${faceTop.toFixed(2)}</p>
-                        <p>FaceHeight: ${faceHeight.toFixed(2)}</p>
+                        <p>スケール: ${scale.toFixed(3)}</p>
+                        <p>顔の上端: ${faceTop.toFixed(2)}px</p>
+                        <p>顔の高さ: ${faceHeight.toFixed(2)}px</p>
+                        <p>元の座標: (${face.x}, ${face.y})</p>
+                        <p>スケール後: (${(face.x * scale).toFixed(2)}, ${(face.y * scale).toFixed(2)})</p>
                     </div>
                     
                     ${eyePairInfo}
