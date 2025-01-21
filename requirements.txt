@@ -5,3 +5,5 @@ numpy
 opencv-python-headless
 dlib-binary
 python-multipart
+setuptools
+wheel
