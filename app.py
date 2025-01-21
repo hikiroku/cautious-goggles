@@ -1,155 +1,91 @@
-import os
+from flask import Flask, request, jsonify, render_template
 import cv2
 import numpy as np
-from flask import Flask, request, render_template, jsonify
-from werkzeug.utils import secure_filename
+from PIL import Image
+import io
+import base64
+import os
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB制限
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
-# OpenCVの検出器を初期化
+# カスケード分類器の読み込み
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def analyze_expression(gray_img, x, y, w, h):
-    roi_gray = gray_img[y:y+h, x:x+w]
-    
-    # 笑顔の検出
-    smiles = smile_cascade.detectMultiScale(
-        roi_gray,
-        scaleFactor=1.7,
-        minNeighbors=20,
-        minSize=(25, 25)
-    )
-    
-    # 目の検出数（両目が検出されているか）
-    eyes = eye_cascade.detectMultiScale(roi_gray)
-    eyes_count = len(eyes)
-    
-    # 表情の分析
-    if len(smiles) > 0:
-        expression = "笑顔"
-        confidence = "高"
-    elif eyes_count == 2:
-        expression = "真剣"
-        confidence = "中"
-    else:
-        expression = "普通"
-        confidence = "低"
-    
-    return {
-        "expression": expression,
-        "confidence": confidence,
-        "details": {
-            "笑顔の検出": "あり" if len(smiles) > 0 else "なし",
-            "目の検出": f"{eyes_count}個",
-        }
-    }
-
-def detect_faces(image_path):
-    # 画像を読み込み
-    img = cv2.imread(image_path)
-    if img is None:
-        return {"error": "画像の読み込みに失敗しました"}
-
-    # グレースケールに変換
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # 顔を検出
-    faces = face_cascade.detectMultiScale(
-        gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(30, 30)
-    )
-    
-    faces_data = []
-    for (x, y, w, h) in faces:
-        face_data = {
-            "x": int(x),
-            "y": int(y),
-            "width": int(w),
-            "height": int(h),
-            "landmarks": [],
-            "expression": analyze_expression(gray, x, y, w, h)
-        }
-        
-        # 顔領域内で目を検出
-        roi_gray = gray[y:y+h, x:x+w]
-        eyes = eye_cascade.detectMultiScale(roi_gray)
-        
-        # 目の位置を追加
-        for (ex, ey, ew, eh) in eyes:
-            face_data["landmarks"].append({
-                "x": int(x + ex + ew/2),  # 目の中心のx座標
-                "y": int(y + ey + eh/2),  # 目の中心のy座標
-                "type": "eye"
-            })
-        
-        faces_data.append(face_data)
-    
-    return faces_data
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({"error": "ファイルがアップロードされていません"}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({"error": "ファイルが選択されていません"}), 400
-    
-    if not allowed_file(file.filename):
-        return jsonify({"error": "許可されていないファイル形式です"}), 400
-    
+def upload():
     try:
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
+        # 画像データを取得
+        file = request.files['image']
+        img_data = file.read()
         
+        # バイナリデータをnumpy配列に変換
+        nparr = np.frombuffer(img_data, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        # グレースケールに変換
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 顔検出
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        
+        results = []
+        for (x, y, w, h) in faces:
+            face_roi_gray = gray[y:y+h, x:x+w]
+            face_roi_color = img[y:y+h, x:x+w]
+            
+            # 目の検出
+            eyes = eye_cascade.detectMultiScale(face_roi_gray)
+            
+            # 目のペアを見つける
+            if len(eyes) >= 2:
+                # Y座標でソート
+                eyes = sorted(eyes, key=lambda e: e[1])
+                
+                # 水平な目のペアを探す
+                for i in range(len(eyes)-1):
+                    eye1 = eyes[i]
+                    eye2 = eyes[i+1]
+                    
+                    # Y座標の差が小さいペアを選択
+                    if abs(eye1[1] - eye2[1]) < 10:
+                        # 目の中心座標を計算
+                        eye1_center = (x + eye1[0] + eye1[2]//2, y + eye1[1] + eye1[3]//2)
+                        eye2_center = (x + eye2[0] + eye2[2]//2, y + eye2[1] + eye2[3]//2)
+                        
+                        # 目の距離を計算
+                        eye_distance = np.sqrt((eye1_center[0] - eye2_center[0])**2 + 
+                                            (eye1_center[1] - eye2_center[1])**2)
+                        
+                        # 結果を追加
+                        eye_data = {
+                            'left_eye': eye1_center,
+                            'right_eye': eye2_center,
+                            'eye_distance': float(eye_distance),
+                            'face_x': int(x),
+                            'face_y': int(y),
+                            'face_width': int(w),
+                            'face_height': int(h)
+                        }
+                        results.append(eye_data)
+                        break
+        
+        # 結果を返す
         return jsonify({
-            "success": True,
-            "image_path": os.path.join('uploads', filename),
-            "filepath": filepath
+            'status': 'success',
+            'message': '顔の検出に成功しました',
+            'results': results
         })
-    
+        
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/analyze', methods=['POST'])
-def analyze_image():
-    try:
-        data = request.get_json()
-        if not data or 'filepath' not in data:
-            return jsonify({"error": "画像パスが指定されていません"}), 400
-        
-        filepath = data['filepath']
-        if not os.path.exists(filepath):
-            return jsonify({"error": "指定された画像が見つかりません"}), 404
-        
-        # 顔検出を実行
-        face_results = detect_faces(filepath)
-        
-        response = {
-            "faces": face_results
-        }
-        
-        return jsonify(response)
-    
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            'status': 'error',
+            'message': f'エラーが発生しました: {str(e)}'
+        }), 500
 
 if __name__ == '__main__':
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     app.run(debug=True)
