@@ -5,6 +5,7 @@ from PIL import Image
 import io
 import base64
 import os
+import sys
 
 app = Flask(__name__)
 
@@ -14,6 +15,9 @@ def get_cascade_paths():
     if os.environ.get('VERCEL'):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         cascade_dir = os.path.join(base_dir, 'cv2', 'data')
+        print(f"Current directory: {os.getcwd()}")
+        print(f"Directory contents: {os.listdir(base_dir)}")
+        print(f"Python path: {sys.path}")
     else:
         # ローカル環境の場合
         cascade_dir = cv2.data.haarcascades
@@ -24,6 +28,12 @@ def get_cascade_paths():
     print(f"Cascade directory: {cascade_dir}")
     print(f"Face cascade path: {cascade_path}")
     print(f"Eye cascade path: {eye_cascade_path}")
+    
+    # ファイルの存在確認
+    if not os.path.exists(cascade_path):
+        print(f"Error: Face cascade file not found at {cascade_path}")
+    if not os.path.exists(eye_cascade_path):
+        print(f"Error: Eye cascade file not found at {eye_cascade_path}")
     
     return cascade_path, eye_cascade_path
 
