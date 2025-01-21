@@ -9,8 +9,13 @@ import os
 app = Flask(__name__)
 
 # カスケード分類器のパスを取得
-cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml')
-eye_cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_eye.xml')
+cascade_dir = cv2.data.haarcascades
+cascade_path = os.path.join(cascade_dir, 'haarcascade_frontalface_default.xml')
+eye_cascade_path = os.path.join(cascade_dir, 'haarcascade_eye.xml')
+
+print(f"Cascade directory: {cascade_dir}")
+print(f"Face cascade path: {cascade_path}")
+print(f"Eye cascade path: {eye_cascade_path}")
 
 # カスケード分類器の読み込み
 try:
@@ -18,6 +23,7 @@ try:
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
     if face_cascade.empty() or eye_cascade.empty():
         raise Exception("カスケード分類器の読み込みに失敗しました")
+    print("Cascades loaded successfully")
 except Exception as e:
     print(f"Error loading cascades: {str(e)}")
     face_cascade = None
@@ -66,6 +72,7 @@ def upload():
         
         # 顔検出
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        print(f"Detected {len(faces)} faces")
         
         if len(faces) == 0:
             return jsonify({
@@ -79,6 +86,7 @@ def upload():
             
             # 目の検出
             eyes = eye_cascade.detectMultiScale(face_roi_gray)
+            print(f"Detected {len(eyes)} eyes in face")
             
             # 目のペアを見つける
             if len(eyes) >= 2:
@@ -111,6 +119,7 @@ def upload():
                             'face_height': int(h)
                         }
                         results.append(eye_data)
+                        print(f"Added eye pair: {eye_data}")
                         break
 
         if not results:
