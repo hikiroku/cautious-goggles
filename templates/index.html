@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顔検出アプリ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>顔検出アプリ</h1>
+        
+        <div class="upload-section">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" id="imageInput" accept=".jpg,.jpeg,.png" required>
+                    <label for="imageInput" class="custom-file-input">画像を選択</label>
+                </div>
+                <button type="submit" id="uploadButton">アップロード</button>
+            </form>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div class="result-section">
+            <div class="image-preview-container">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+            <div id="resultInfo" class="result-info hidden">
+                <h3>検出結果</h3>
+                <div id="faceDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
