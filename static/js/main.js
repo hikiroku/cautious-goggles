@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 目の間の距離を計算
                 const eyeDistance = Math.sqrt(
                     Math.pow(rightEyeScaled.x - leftEyeScaled.x, 2) + 
-                    Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
+                    Math.pow(rightEyeScaled.y - rightEyeScaled.y, 2)
                 );
 
                 // サングラスのサイズと位置を計算
@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h5>目のペア情報</h5>
                         <p>左目: (${leftEyeScaled.x.toFixed(2)}, ${leftEyeScaled.y.toFixed(2)})</p>
                         <p>右目: (${rightEyeScaled.x.toFixed(2)}, ${rightEyeScaled.y.toFixed(2)})</p>
+                        <p>Y座標の差: ${eyePair.yDiff.toFixed(2)}px</p>
                         <h5>計算情報</h5>
                         <p>目の間の距離: ${eyeDistance.toFixed(2)}px</p>
                         <p>サングラスサイズ: ${sunglassesSize.toFixed(2)}px</p>
@@ -222,28 +223,43 @@ document.addEventListener('DOMContentLoaded', () => {
     function findHorizontalEyePair(eyes) {
         if (eyes.length < 2) return null;
         
-        // X座標でソート
-        const sortedEyes = [...eyes].sort((a, b) => a.x - b.x);
+        // Y座標でソート
+        const sortedEyes = [...eyes].sort((a, b) => a.y - b.y);
         
-        // 2つの目ずつチェック
+        // Y座標が近い目のペアを探す
+        let bestPair = null;
+        let minYDiff = Infinity;
+        
         for (let i = 0; i < sortedEyes.length - 1; i++) {
-            const eye1 = sortedEyes[i];
-            const eye2 = sortedEyes[i + 1];
-            
-            // Y座標の差が小さい（ほぼ水平）場合、このペアを採用
-            if (Math.abs(eye2.y - eye1.y) < 10) {
-                return {
-                    leftEye: eye1,
-                    rightEye: eye2
-                };
+            for (let j = i + 1; j < sortedEyes.length; j++) {
+                const eye1 = sortedEyes[i];
+                const eye2 = sortedEyes[j];
+                const yDiff = Math.abs(eye2.y - eye1.y);
+                
+                // Y座標の差が50px未満の場合を候補とする
+                if (yDiff < 50 && yDiff < minYDiff) {
+                    minYDiff = yDiff;
+                    // X座標が小さい方を左目とする
+                    bestPair = {
+                        leftEye: eye1.x < eye2.x ? eye1 : eye2,
+                        rightEye: eye1.x < eye2.x ? eye2 : eye1,
+                        yDiff: yDiff
+                    };
+                }
             }
         }
         
-        // 水平なペアが見つからない場合は最初の2つを使用
-        return {
-            leftEye: sortedEyes[0],
-            rightEye: sortedEyes[1]
-        };
+        // 適切なペアが見つからない場合は最初の2つを使用
+        if (!bestPair && sortedEyes.length >= 2) {
+            const yDiff = Math.abs(sortedEyes[1].y - sortedEyes[0].y);
+            bestPair = {
+                leftEye: sortedEyes[0].x < sortedEyes[1].x ? sortedEyes[0] : sortedEyes[1],
+                rightEye: sortedEyes[0].x < sortedEyes[1].x ? sortedEyes[1] : sortedEyes[0],
+                yDiff: yDiff
+            };
+        }
+        
+        return bestPair;
     }
 
     // サングラスemojiを描画
