@@ -7,7 +7,11 @@
       "config": {
         "maxLambdaSize": "15mb",
         "pythonVersion": "3.9",
-        "installCommand": "pip install --upgrade pip && pip install -r requirements.txt && python -c \"import cv2; cv2.data.haarcascades\""
+        "installCommand": "pip install --upgrade pip && pip install -r requirements.txt",
+        "includeFiles": [
+          "cv2/data/haarcascade_frontalface_default.xml",
+          "cv2/data/haarcascade_eye.xml"
+        ]
       }
     }
   ],
@@ -19,7 +23,6 @@
   ],
   "env": {
     "PYTHONPATH": "/var/task",
-    "PYTHONUNBUFFERED": "1",
-    "OPENCV_ENABLE_HEADLESS": "1"
+    "PYTHONUNBUFFERED": "1"
   }
 }
