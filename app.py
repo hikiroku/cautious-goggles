@@ -8,9 +8,20 @@ import os
 
 app = Flask(__name__)
 
+# カスケード分類器のパスを取得
+cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_frontalface_default.xml')
+eye_cascade_path = os.path.join(cv2.data.haarcascades, 'haarcascade_eye.xml')
+
 # カスケード分類器の読み込み
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+try:
+    face_cascade = cv2.CascadeClassifier(cascade_path)
+    eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
+    if face_cascade.empty() or eye_cascade.empty():
+        raise Exception("カスケード分類器の読み込みに失敗しました")
+except Exception as e:
+    print(f"Error loading cascades: {str(e)}")
+    face_cascade = None
+    eye_cascade = None
 
 @app.route('/')
 def index():
@@ -19,24 +30,52 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload():
     try:
+        if face_cascade is None or eye_cascade is None:
+            return jsonify({
+                'status': 'error',
+                'message': 'カスケード分類器が正しく初期化されていません'
+            }), 500
+
         # 画像データを取得
+        if 'image' not in request.files:
+            return jsonify({
+                'status': 'error',
+                'message': '画像ファイルが見つかりません'
+            }), 400
+
         file = request.files['image']
+        if file.filename == '':
+            return jsonify({
+                'status': 'error',
+                'message': 'ファイルが選択されていません'
+            }), 400
+
+        # 画像を読み込み
         img_data = file.read()
-        
-        # バイナリデータをnumpy配列に変換
         nparr = np.frombuffer(img_data, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
+
+        if img is None:
+            return jsonify({
+                'status': 'error',
+                'message': '画像の読み込みに失敗しました'
+            }), 400
+
         # グレースケールに変換
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
         # 顔検出
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         
+        if len(faces) == 0:
+            return jsonify({
+                'status': 'error',
+                'message': '顔を検出できませんでした'
+            }), 400
+
         results = []
         for (x, y, w, h) in faces:
             face_roi_gray = gray[y:y+h, x:x+w]
-            face_roi_color = img[y:y+h, x:x+w]
             
             # 目の検出
             eyes = eye_cascade.detectMultiScale(face_roi_gray)
@@ -63,8 +102,8 @@ def upload():
                         
                         # 結果を追加
                         eye_data = {
-                            'left_eye': eye1_center,
-                            'right_eye': eye2_center,
+                            'left_eye': list(map(int, eye1_center)),
+                            'right_eye': list(map(int, eye2_center)),
                             'eye_distance': float(eye_distance),
                             'face_x': int(x),
                             'face_y': int(y),
@@ -73,6 +112,12 @@ def upload():
                         }
                         results.append(eye_data)
                         break
+
+        if not results:
+            return jsonify({
+                'status': 'error',
+                'message': '目を検出できませんでした'
+            }), 400
         
         # 結果を返す
         return jsonify({
@@ -82,6 +127,7 @@ def upload():
         })
         
     except Exception as e:
+        print(f"Error processing image: {str(e)}")
         return jsonify({
             'status': 'error',
             'message': f'エラーが発生しました: {str(e)}'
