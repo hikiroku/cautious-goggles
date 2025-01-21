@@ -1,6 +1,6 @@
 import os
 import cv2
-import dlib
+import mediapipe as mp
 import numpy as np
 from flask import Flask, request, render_template, jsonify
 from werkzeug.utils import secure_filename
@@ -10,9 +10,14 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB制限
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
-# dlibの顔検出器を初期化
-detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+# MediaPipeの顔検出モジュールを初期化
+mp_face_mesh = mp.solutions.face_mesh
+face_mesh = mp_face_mesh.FaceMesh(
+    static_image_mode=True,
+    max_num_faces=10,
+    refine_landmarks=True,
+    min_detection_confidence=0.5
+)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -24,37 +29,43 @@ def detect_faces(image_path):
     if img is None:
         return {"error": "画像の読み込みに失敗しました"}
 
-    # グレースケールに変換
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # BGR to RGB
+    rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    height, width = rgb_img.shape[:2]
     
     # 顔を検出
-    faces = detector(gray)
+    results = face_mesh.process(rgb_img)
     
-    results = []
-    for face in faces:
-        # 顔のランドマークを検出
-        shape = predictor(gray, face)
-        
-        # 顔の座標を取得
-        face_data = {
-            "x": face.left(),
-            "y": face.top(),
-            "width": face.width(),
-            "height": face.height(),
-            "landmarks": []
-        }
-        
-        # ランドマークの座標を取得
-        for i in range(68):
-            point = shape.part(i)
-            face_data["landmarks"].append({
-                "x": point.x,
-                "y": point.y
-            })
-        
-        results.append(face_data)
+    faces_data = []
+    if results.multi_face_landmarks:
+        for face_landmarks in results.multi_face_landmarks:
+            # 顔の境界ボックスを計算
+            x_coordinates = [landmark.x for landmark in face_landmarks.landmark]
+            y_coordinates = [landmark.y for landmark in face_landmarks.landmark]
+            
+            x_min = int(min(x_coordinates) * width)
+            y_min = int(min(y_coordinates) * height)
+            x_max = int(max(x_coordinates) * width)
+            y_max = int(max(y_coordinates) * height)
+            
+            face_data = {
+                "x": x_min,
+                "y": y_min,
+                "width": x_max - x_min,
+                "height": y_max - y_min,
+                "landmarks": []
+            }
+            
+            # ランドマークの座標を取得
+            for idx, landmark in enumerate(face_landmarks.landmark):
+                face_data["landmarks"].append({
+                    "x": int(landmark.x * width),
+                    "y": int(landmark.y * height)
+                })
+            
+            faces_data.append(face_data)
     
-    return results
+    return faces_data
 
 @app.route('/')
 def index():
