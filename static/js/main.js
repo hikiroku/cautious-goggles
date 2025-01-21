@@ -176,39 +176,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     Math.pow(rightEye.y - leftEye.y, 2)
                 ) * scale;
 
-                // 目の角度を計算
-                const angle = Math.atan2(
-                    (rightEye.y - leftEye.y) * scale,
-                    (rightEye.x - leftEye.x) * scale
-                );
-
                 // サングラスのサイズと位置を計算
-                const sunglassesSize = eyeDistance * 2; // サングラスの幅を調整
-                const centerX = ((leftEye.x + rightEye.x) / 2 * scale);
-                const centerY = ((leftEye.y + rightEye.y) / 2 * scale);
+                const sunglassesSize = eyeDistance * 1.2; // サイズを調整
+                const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
+                const centerY = (leftEye.y * scale + rightEye.y * scale) / 2;
+                
+                // 目の高さの差が小さい場合は回転しない
+                const heightDiff = Math.abs(rightEye.y - leftEye.y) * scale;
+                const shouldRotate = heightDiff > 5; // 5ピクセル以上の差がある場合のみ回転
+
+                // サングラスの位置を調整
                 const x = centerX - (sunglassesSize / 2);
-                const y = centerY - (sunglassesSize / 3);
+                const y = centerY - (sunglassesSize / 4);
 
                 // サングラスemojiを描画
                 ctx.save();
-                ctx.translate(centerX, centerY);
-                ctx.rotate(angle);
-                ctx.translate(-centerX, -centerY);
+                if (shouldRotate) {
+                    const angle = Math.atan2(
+                        (rightEye.y - leftEye.y) * scale,
+                        (rightEye.x - leftEye.x) * scale
+                    );
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(angle);
+                    ctx.translate(-centerX, -centerY);
+                }
                 ctx.font = `${sunglassesSize}px Arial`;
                 ctx.fillText('🕶', x, y);
                 ctx.restore();
-
-                // 効果音を追加（オプション）
-                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
-                audio.volume = 0.2;
-                audio.play().catch(() => {}); // エラーを無視
             }
         });
 
         // アニメーション効果（フェードアウト）
         let opacity = 1;
         const fadeInterval = setInterval(() => {
-            opacity -= 0.1;
+            opacity -= 0.05; // フェードアウトの速度を遅く
             if (opacity <= 0) {
                 clearInterval(fadeInterval);
                 ctx.putImageData(imageData, 0, 0);
@@ -224,27 +225,33 @@ document.addEventListener('DOMContentLoaded', () => {
                             Math.pow(rightEye.x - leftEye.x, 2) + 
                             Math.pow(rightEye.y - leftEye.y, 2)
                         ) * scale;
-                        const centerX = ((leftEye.x + rightEye.x) / 2 * scale);
-                        const centerY = ((leftEye.y + rightEye.y) / 2 * scale);
-                        const angle = Math.atan2(
-                            (rightEye.y - leftEye.y) * scale,
-                            (rightEye.x - leftEye.x) * scale
-                        );
-                        const sunglassesSize = eyeDistance * 2;
+                        
+                        const sunglassesSize = eyeDistance * 1.2;
+                        const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
+                        const centerY = (leftEye.y * scale + rightEye.y * scale) / 2;
+                        const heightDiff = Math.abs(rightEye.y - leftEye.y) * scale;
+                        const shouldRotate = heightDiff > 5;
+                        
                         const x = centerX - (sunglassesSize / 2);
-                        const y = centerY - (sunglassesSize / 3);
+                        const y = centerY - (sunglassesSize / 4);
 
                         ctx.save();
-                        ctx.translate(centerX, centerY);
-                        ctx.rotate(angle);
-                        ctx.translate(-centerX, -centerY);
+                        if (shouldRotate) {
+                            const angle = Math.atan2(
+                                (rightEye.y - leftEye.y) * scale,
+                                (rightEye.x - leftEye.x) * scale
+                            );
+                            ctx.translate(centerX, centerY);
+                            ctx.rotate(angle);
+                            ctx.translate(-centerX, -centerY);
+                        }
                         ctx.font = `${sunglassesSize}px Arial`;
                         ctx.fillText('🕶', x, y);
                         ctx.restore();
                     }
                 });
             }
-        }, 100);
+        }, 50); // アニメーションの更新間隔を短く
     }
 
     // 分析ボタンのクリックハンドラ
