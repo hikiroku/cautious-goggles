@@ -166,27 +166,85 @@ document.addEventListener('DOMContentLoaded', () => {
             // 目のランドマークをグループ化
             const eyes = face.landmarks.filter(point => point.type === 'eye');
             if (eyes.length >= 2) {
+                // 左目と右目を特定
+                const leftEye = eyes[0].x < eyes[1].x ? eyes[0] : eyes[1];
+                const rightEye = eyes[0].x < eyes[1].x ? eyes[1] : eyes[0];
+
                 // 目の間の距離を計算
                 const eyeDistance = Math.sqrt(
-                    Math.pow(eyes[1].x - eyes[0].x, 2) + 
-                    Math.pow(eyes[1].y - eyes[0].y, 2)
+                    Math.pow(rightEye.x - leftEye.x, 2) + 
+                    Math.pow(rightEye.y - leftEye.y, 2)
                 ) * scale;
 
+                // 目の角度を計算
+                const angle = Math.atan2(
+                    (rightEye.y - leftEye.y) * scale,
+                    (rightEye.x - leftEye.x) * scale
+                );
+
                 // サングラスのサイズと位置を計算
-                const sunglassesSize = eyeDistance * 1.5; // サングラスの幅
-                const x = ((eyes[0].x + eyes[1].x) / 2 * scale) - (sunglassesSize / 2);
-                const y = (eyes[0].y * scale) - (sunglassesSize / 4);
+                const sunglassesSize = eyeDistance * 2; // サングラスの幅を調整
+                const centerX = ((leftEye.x + rightEye.x) / 2 * scale);
+                const centerY = ((leftEye.y + rightEye.y) / 2 * scale);
+                const x = centerX - (sunglassesSize / 2);
+                const y = centerY - (sunglassesSize / 3);
 
                 // サングラスemojiを描画
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle);
+                ctx.translate(-centerX, -centerY);
                 ctx.font = `${sunglassesSize}px Arial`;
                 ctx.fillText('🕶', x, y);
+                ctx.restore();
+
+                // 効果音を追加（オプション）
+                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+                audio.volume = 0.2;
+                audio.play().catch(() => {}); // エラーを無視
             }
         });
 
-        // アニメーション効果
-        setTimeout(() => {
-            ctx.putImageData(imageData, 0, 0);
-        }, 1000);
+        // アニメーション効果（フェードアウト）
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+            opacity -= 0.1;
+            if (opacity <= 0) {
+                clearInterval(fadeInterval);
+                ctx.putImageData(imageData, 0, 0);
+            } else {
+                ctx.globalAlpha = opacity;
+                ctx.putImageData(imageData, 0, 0);
+                faces.forEach(face => {
+                    const eyes = face.landmarks.filter(point => point.type === 'eye');
+                    if (eyes.length >= 2) {
+                        const leftEye = eyes[0].x < eyes[1].x ? eyes[0] : eyes[1];
+                        const rightEye = eyes[0].x < eyes[1].x ? eyes[1] : eyes[0];
+                        const eyeDistance = Math.sqrt(
+                            Math.pow(rightEye.x - leftEye.x, 2) + 
+                            Math.pow(rightEye.y - leftEye.y, 2)
+                        ) * scale;
+                        const centerX = ((leftEye.x + rightEye.x) / 2 * scale);
+                        const centerY = ((leftEye.y + rightEye.y) / 2 * scale);
+                        const angle = Math.atan2(
+                            (rightEye.y - leftEye.y) * scale,
+                            (rightEye.x - leftEye.x) * scale
+                        );
+                        const sunglassesSize = eyeDistance * 2;
+                        const x = centerX - (sunglassesSize / 2);
+                        const y = centerY - (sunglassesSize / 3);
+
+                        ctx.save();
+                        ctx.translate(centerX, centerY);
+                        ctx.rotate(angle);
+                        ctx.translate(-centerX, -centerY);
+                        ctx.font = `${sunglassesSize}px Arial`;
+                        ctx.fillText('🕶', x, y);
+                        ctx.restore();
+                    }
+                });
+            }
+        }, 100);
     }
 
     // 分析ボタンのクリックハンドラ
