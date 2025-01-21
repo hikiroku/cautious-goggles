@@ -120,7 +120,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>右目（元）: (${eyePair.rightEye.x}, ${eyePair.rightEye.y})</p>
                         <p>左目（スケール後）: (${leftEyeScaled.x.toFixed(2)}, ${leftEyeScaled.y.toFixed(2)})</p>
                         <p>右目（スケール後）: (${rightEyeScaled.x.toFixed(2)}, ${rightEyeScaled.y.toFixed(2)})</p>
+                        <h5>座標の差分</h5>
                         <p>Y座標の差: ${eyePair.yDiff.toFixed(2)}px</p>
+                        <p>X座標の差: ${eyePair.xDist.toFixed(2)}px</p>
+                        <p>スケールによる変化量:</p>
+                        <p>　左目: (${(leftEyeScaled.x - eyePair.leftEye.x).toFixed(2)}, ${(leftEyeScaled.y - eyePair.leftEye.y).toFixed(2)})</p>
+                        <p>　右目: (${(rightEyeScaled.x - eyePair.rightEye.x).toFixed(2)}, ${(rightEyeScaled.y - eyePair.rightEye.y).toFixed(2)})</p>
+                        <h5>選択基準</h5>
+                        <p>水平判定閾値: 50px</p>
+                        <p>Y座標の差が最小のペアを選択</p>
+                        <p>同じY座標差の場合、X座標の距離が近いペアを選択</p>
                         <h5>計算情報</h5>
                         <p>目の間の距離: ${eyeDistance.toFixed(2)}px</p>
                         <p>サングラスサイズ: ${sunglassesSize.toFixed(2)}px</p>
