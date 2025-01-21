@@ -3,7 +3,7 @@ gunicorn
 Pillow
 numpy
 opencv-python-headless
-dlib-binary
+face-recognition
 python-multipart
 setuptools
 wheel
