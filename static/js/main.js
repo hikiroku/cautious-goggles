@@ -157,18 +157,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // 水平な目のペアを見つける関数
+    function findHorizontalEyePair(eyes) {
+        if (eyes.length < 2) return null;
+        
+        // X座標でソート
+        const sortedEyes = [...eyes].sort((a, b) => a.x - b.x);
+        
+        // 2つの目ずつチェック
+        for (let i = 0; i < sortedEyes.length - 1; i++) {
+            const eye1 = sortedEyes[i];
+            const eye2 = sortedEyes[i + 1];
+            
+            // Y座標の差が小さい（ほぼ水平）場合、このペアを採用
+            if (Math.abs(eye2.y - eye1.y) < 10) {
+                return {
+                    leftEye: eye1,
+                    rightEye: eye2
+                };
+            }
+        }
+        
+        // 水平なペアが見つからない場合は最初の2つを使用
+        return {
+            leftEye: sortedEyes[0],
+            rightEye: sortedEyes[1]
+        };
+    }
+
     // サングラスemojiを描画
     function drawSunglasses(faces, scale) {
         // 元の画像を保存
         const imageData = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
         
-        faces.forEach(face => {
+        // 最初の顔のみを処理
+        const face = faces[0];
+        if (face) {
             // 目のランドマークをグループ化
             const eyes = face.landmarks.filter(point => point.type === 'eye');
-            if (eyes.length >= 2) {
-                // 左目と右目を特定
-                const leftEye = eyes[0].x < eyes[1].x ? eyes[0] : eyes[1];
-                const rightEye = eyes[0].x < eyes[1].x ? eyes[1] : eyes[0];
+            const eyePair = findHorizontalEyePair(eyes);
+            
+            if (eyePair) {
+                const { leftEye, rightEye } = eyePair;
 
                 // 目の間の距離を計算
                 const eyeDistance = Math.sqrt(
@@ -177,81 +207,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 ) * scale;
 
                 // サングラスのサイズと位置を計算
-                const sunglassesSize = eyeDistance * 1.2; // サイズを調整
+                const sunglassesSize = eyeDistance * 1.3;
                 const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
                 const centerY = (leftEye.y * scale + rightEye.y * scale) / 2;
-                
-                // 目の高さの差が小さい場合は回転しない
-                const heightDiff = Math.abs(rightEye.y - leftEye.y) * scale;
-                const shouldRotate = heightDiff > 5; // 5ピクセル以上の差がある場合のみ回転
 
                 // サングラスの位置を調整
                 const x = centerX - (sunglassesSize / 2);
-                const y = centerY - (sunglassesSize / 4);
+                const y = centerY - (sunglassesSize / 3);
 
                 // サングラスemojiを描画
                 ctx.save();
-                if (shouldRotate) {
-                    const angle = Math.atan2(
-                        (rightEye.y - leftEye.y) * scale,
-                        (rightEye.x - leftEye.x) * scale
-                    );
-                    ctx.translate(centerX, centerY);
-                    ctx.rotate(angle);
-                    ctx.translate(-centerX, -centerY);
-                }
                 ctx.font = `${sunglassesSize}px Arial`;
                 ctx.fillText('🕶', x, y);
                 ctx.restore();
             }
-        });
+        }
 
         // アニメーション効果（フェードアウト）
         let opacity = 1;
         const fadeInterval = setInterval(() => {
-            opacity -= 0.05; // フェードアウトの速度を遅く
+            opacity -= 0.05;
             if (opacity <= 0) {
                 clearInterval(fadeInterval);
                 ctx.putImageData(imageData, 0, 0);
             } else {
                 ctx.globalAlpha = opacity;
                 ctx.putImageData(imageData, 0, 0);
-                faces.forEach(face => {
+                
+                // 最初の顔のみを処理
+                const face = faces[0];
+                if (face) {
                     const eyes = face.landmarks.filter(point => point.type === 'eye');
-                    if (eyes.length >= 2) {
-                        const leftEye = eyes[0].x < eyes[1].x ? eyes[0] : eyes[1];
-                        const rightEye = eyes[0].x < eyes[1].x ? eyes[1] : eyes[0];
+                    const eyePair = findHorizontalEyePair(eyes);
+                    
+                    if (eyePair) {
+                        const { leftEye, rightEye } = eyePair;
                         const eyeDistance = Math.sqrt(
                             Math.pow(rightEye.x - leftEye.x, 2) + 
                             Math.pow(rightEye.y - leftEye.y, 2)
                         ) * scale;
                         
-                        const sunglassesSize = eyeDistance * 1.2;
+                        const sunglassesSize = eyeDistance * 1.3;
                         const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
                         const centerY = (leftEye.y * scale + rightEye.y * scale) / 2;
-                        const heightDiff = Math.abs(rightEye.y - leftEye.y) * scale;
-                        const shouldRotate = heightDiff > 5;
-                        
                         const x = centerX - (sunglassesSize / 2);
-                        const y = centerY - (sunglassesSize / 4);
+                        const y = centerY - (sunglassesSize / 3);
 
                         ctx.save();
-                        if (shouldRotate) {
-                            const angle = Math.atan2(
-                                (rightEye.y - leftEye.y) * scale,
-                                (rightEye.x - leftEye.x) * scale
-                            );
-                            ctx.translate(centerX, centerY);
-                            ctx.rotate(angle);
-                            ctx.translate(-centerX, -centerY);
-                        }
                         ctx.font = `${sunglassesSize}px Arial`;
                         ctx.fillText('🕶', x, y);
                         ctx.restore();
                     }
-                });
+                }
             }
-        }, 50); // アニメーションの更新間隔を短く
+        }, 50);
     }
 
     // 分析ボタンのクリックハンドラ
