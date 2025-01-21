@@ -9,18 +9,30 @@ import os
 app = Flask(__name__)
 
 # カスケード分類器のパスを取得
-cascade_dir = cv2.data.haarcascades
-cascade_path = os.path.join(cascade_dir, 'haarcascade_frontalface_default.xml')
-eye_cascade_path = os.path.join(cascade_dir, 'haarcascade_eye.xml')
+def get_cascade_paths():
+    # Vercel環境の場合
+    if os.environ.get('VERCEL'):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        cascade_dir = os.path.join(base_dir, 'cv2', 'data')
+    else:
+        # ローカル環境の場合
+        cascade_dir = cv2.data.haarcascades
 
-print(f"Cascade directory: {cascade_dir}")
-print(f"Face cascade path: {cascade_path}")
-print(f"Eye cascade path: {eye_cascade_path}")
+    cascade_path = os.path.join(cascade_dir, 'haarcascade_frontalface_default.xml')
+    eye_cascade_path = os.path.join(cascade_dir, 'haarcascade_eye.xml')
+    
+    print(f"Cascade directory: {cascade_dir}")
+    print(f"Face cascade path: {cascade_path}")
+    print(f"Eye cascade path: {eye_cascade_path}")
+    
+    return cascade_path, eye_cascade_path
 
 # カスケード分類器の読み込み
 try:
-    face_cascade = cv2.CascadeClassifier(cascade_path)
+    face_cascade_path, eye_cascade_path = get_cascade_paths()
+    face_cascade = cv2.CascadeClassifier(face_cascade_path)
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
+    
     if face_cascade.empty() or eye_cascade.empty():
         raise Exception("カスケード分類器の読み込みに失敗しました")
     print("Cascades loaded successfully")
