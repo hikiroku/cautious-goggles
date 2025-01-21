@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             error.classList.add('hidden');
             resultInfo.classList.add('hidden');
             analyzeButton.disabled = true;
+            sunglassesButton.disabled = true;
 
             // 画像のプレビュー表示
             await displayPreview(file);
@@ -103,8 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 検出結果を表示
             if (data.results && data.results.length > 0) {
+                currentFaces = data.results;
                 drawDetectionResults(data.results, currentScale);
-                analyzeButton.disabled = false;
+                sunglassesButton.disabled = false;
             }
 
         } catch (err) {
@@ -153,6 +155,59 @@ document.addEventListener('DOMContentLoaded', () => {
         faceDetails.innerHTML = detailsHTML;
         resultInfo.classList.remove('hidden');
     }
+
+    // サングラスの描画
+    function drawSunglasses(result) {
+        // 元の画像を保存
+        const imageData = ctx.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+        
+        // 目の位置を取得
+        const leftEye = result.left_eye;
+        const rightEye = result.right_eye;
+        
+        // 目の間の距離を計算
+        const eyeDistance = result.eye_distance;
+        
+        // サングラスのサイズを計算（目の間隔の2倍）
+        const sunglassesWidth = eyeDistance * 2.0;
+        const sunglassesHeight = sunglassesWidth / 3;
+        
+        // サングラスの位置を計算（目の中心）
+        const centerX = (leftEye[0] + rightEye[0]) / 2;
+        const centerY = (leftEye[1] + rightEye[1]) / 2;
+        const x = centerX - (sunglassesWidth / 2);
+        const y = centerY - (sunglassesHeight / 2);
+
+        // サングラスemojiを描画
+        ctx.save();
+        ctx.font = `${sunglassesWidth}px Arial`;
+        ctx.fillText('🕶', x, y + sunglassesHeight);
+        ctx.restore();
+
+        // アニメーション効果（フェードアウト）
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+            opacity -= 0.05;
+            if (opacity <= 0) {
+                clearInterval(fadeInterval);
+                ctx.putImageData(imageData, 0, 0);
+            } else {
+                ctx.globalAlpha = opacity;
+                ctx.putImageData(imageData, 0, 0);
+                ctx.save();
+                ctx.font = `${sunglassesWidth}px Arial`;
+                ctx.fillText('🕶', x, y + sunglassesHeight);
+                ctx.restore();
+            }
+        }, 50);
+    }
+
+    // サングラスボタンのクリックハンドラ
+    sunglassesButton.addEventListener('click', () => {
+        if (currentFaces && currentFaces.length > 0) {
+            drawSunglasses(currentFaces[0]);
+        }
+    });
 
     // ファイル選択時のプレビュー表示
     imageInput.addEventListener('change', (e) => {
