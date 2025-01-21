@@ -200,25 +200,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (eyePair) {
                 const { leftEye, rightEye } = eyePair;
 
+                // 目の位置をスケール適用
+                const leftEyeScaled = {
+                    x: leftEye.x * scale,
+                    y: leftEye.y * scale
+                };
+                const rightEyeScaled = {
+                    x: rightEye.x * scale,
+                    y: rightEye.y * scale
+                };
+
                 // 目の間の距離を計算
                 const eyeDistance = Math.sqrt(
-                    Math.pow(rightEye.x - leftEye.x, 2) + 
-                    Math.pow(rightEye.y - leftEye.y, 2)
-                ) * scale;
+                    Math.pow(rightEyeScaled.x - leftEyeScaled.x, 2) + 
+                    Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
+                );
 
-                // サングラスのサイズを計算
+                // サングラスのサイズと位置を計算
                 const sunglassesSize = eyeDistance * 1.5;
-
-                // 目の中心位置を計算
-                const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
-                const eyeY = ((leftEye.y + rightEye.y) / 2);
-
-                // 顔の矩形領域内での相対位置を計算
-                const eyeOffsetFromTop = eyeY - face.y;
-                const y = (face.y + eyeOffsetFromTop) * scale - (sunglassesSize / 3);
-
-                // X座標の位置を調整
+                const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
+                const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
                 const x = centerX - (sunglassesSize / 2);
+                const y = centerY - (sunglassesSize / 2.5);
 
                 // サングラスemojiを描画
                 ctx.save();
@@ -247,17 +250,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     if (eyePair) {
                         const { leftEye, rightEye } = eyePair;
+                        const leftEyeScaled = {
+                            x: leftEye.x * scale,
+                            y: leftEye.y * scale
+                        };
+                        const rightEyeScaled = {
+                            x: rightEye.x * scale,
+                            y: rightEye.y * scale
+                        };
+
                         const eyeDistance = Math.sqrt(
-                            Math.pow(rightEye.x - leftEye.x, 2) + 
-                            Math.pow(rightEye.y - leftEye.y, 2)
-                        ) * scale;
-                        
+                            Math.pow(rightEyeScaled.x - leftEyeScaled.x, 2) + 
+                            Math.pow(rightEyeScaled.y - leftEyeScaled.y, 2)
+                        );
+
                         const sunglassesSize = eyeDistance * 1.5;
-                        const centerX = ((leftEye.x + rightEye.x) / 2) * scale;
-                        const eyeY = ((leftEye.y + rightEye.y) / 2);
-                        const eyeOffsetFromTop = eyeY - face.y;
-                        const y = (face.y + eyeOffsetFromTop) * scale - (sunglassesSize / 3);
+                        const centerX = (leftEyeScaled.x + rightEyeScaled.x) / 2;
+                        const centerY = (leftEyeScaled.y + rightEyeScaled.y) / 2;
                         const x = centerX - (sunglassesSize / 2);
+                        const y = centerY - (sunglassesSize / 2.5);
 
                         ctx.save();
                         ctx.font = `${sunglassesSize}px Arial`;
